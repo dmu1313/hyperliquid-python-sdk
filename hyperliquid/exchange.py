@@ -87,8 +87,8 @@ class Exchange(API):
         self,
         name: str,
         is_buy: bool,
-        sz: float,
-        limit_px: float,
+        sz: str,
+        limit_px: str,
         order_type: OrderType,
         reduce_only: bool = False,
         cloid: Optional[Cloid] = None,
@@ -108,7 +108,8 @@ class Exchange(API):
 
     def bulk_orders(self, order_requests: List[OrderRequest], builder: Optional[BuilderInfo] = None) -> Any:
         order_wires: List[OrderWire] = [
-            order_request_to_order_wire(order, self.info.name_to_asset(order["coin"])) for order in order_requests
+            order_request_to_order_wire(order, order["asset"] if "asset" in order else self.info.name_to_asset(order["coin"]))
+            for order in order_requests
         ]
         timestamp = get_timestamp_ms()
 
@@ -250,7 +251,7 @@ class Exchange(API):
             "type": "cancel",
             "cancels": [
                 {
-                    "a": self.info.name_to_asset(cancel["coin"]),
+                    "a": cancel["asset"] if "asset" in cancel else self.info.name_to_asset(cancel["coin"]),
                     "o": cancel["oid"],
                 }
                 for cancel in cancel_requests
@@ -277,7 +278,7 @@ class Exchange(API):
             "type": "cancelByCloid",
             "cancels": [
                 {
-                    "asset": self.info.name_to_asset(cancel["coin"]),
+                    "asset": cancel["asset"] if "asset" in cancel else self.info.name_to_asset(cancel["coin"]),
                     "cloid": cancel["cloid"].to_raw(),
                 }
                 for cancel in cancel_requests

@@ -10,7 +10,7 @@ from hyperliquid.utils.types import Cloid, Literal, NotRequired, Optional, Typed
 Tif = Union[Literal["Alo"], Literal["Ioc"], Literal["Gtc"]]
 Tpsl = Union[Literal["tp"], Literal["sl"]]
 LimitOrderType = TypedDict("LimitOrderType", {"tif": Tif})
-TriggerOrderType = TypedDict("TriggerOrderType", {"triggerPx": float, "isMarket": bool, "tpsl": Tpsl})
+TriggerOrderType = TypedDict("TriggerOrderType", {"triggerPx": str, "isMarket": bool, "tpsl": Tpsl})
 TriggerOrderTypeWire = TypedDict("TriggerOrderTypeWire", {"triggerPx": str, "isMarket": bool, "tpsl": Tpsl})
 OrderType = TypedDict("OrderType", {"limit": LimitOrderType, "trigger": TriggerOrderType}, total=False)
 OrderTypeWire = TypedDict("OrderTypeWire", {"limit": LimitOrderType, "trigger": TriggerOrderTypeWire}, total=False)
@@ -19,11 +19,12 @@ OrderRequest = TypedDict(
     {
         "coin": str,
         "is_buy": bool,
-        "sz": float,
-        "limit_px": float,
+        "sz": str,
+        "limit_px": str,
         "order_type": OrderType,
         "reduce_only": bool,
         "cloid": NotRequired[Optional[Cloid]],
+        "asset": NotRequired[Optional[int]],
     },
     total=False,
 )
@@ -36,8 +37,8 @@ ModifyRequest = TypedDict(
     },
     total=False,
 )
-CancelRequest = TypedDict("CancelRequest", {"coin": str, "oid": int})
-CancelByCloidRequest = TypedDict("CancelByCloidRequest", {"coin": str, "cloid": Cloid})
+CancelRequest = TypedDict("CancelRequest", {"coin": str, "oid": int, "asset": NotRequired[Optional[int]]})
+CancelByCloidRequest = TypedDict("CancelByCloidRequest", {"coin": str, "cloid": Cloid, "asset": NotRequired[Optional[int]]})
 
 Grouping = Union[Literal["na"], Literal["normalTpsl"], Literal["positionTpsl"]]
 Order = TypedDict(
@@ -123,7 +124,7 @@ def order_type_to_wire(order_type: OrderType) -> OrderTypeWire:
         return {
             "trigger": {
                 "isMarket": order_type["trigger"]["isMarket"],
-                "triggerPx": float_to_wire(order_type["trigger"]["triggerPx"]),
+                "triggerPx": order_type["trigger"]["triggerPx"],
                 "tpsl": order_type["trigger"]["tpsl"],
             }
         }
@@ -397,8 +398,8 @@ def order_request_to_order_wire(order: OrderRequest, asset: int) -> OrderWire:
     order_wire: OrderWire = {
         "a": asset,
         "b": order["is_buy"],
-        "p": float_to_wire(order["limit_px"]),
-        "s": float_to_wire(order["sz"]),
+        "p": order["limit_px"],
+        "s": order["sz"],
         "r": order["reduce_only"],
         "t": order_type_to_wire(order["order_type"]),
     }
